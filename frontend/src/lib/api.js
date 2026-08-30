@@ -1,0 +1,26 @@
+import axios from "axios";
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000/api",
+});
+
+export const getLeaderboard = (period, category) =>
+  api.get("/leaderboard", { params: { period, category } }).then((r) => r.data);
+
+export const getCategories = () => api.get("/categories").then((r) => r.data.categories);
+
+export const getMovements = () => api.get("/movement").then((r) => r.data.movements);
+
+export const registerView = (channelId) => api.post(`/leaderboard/${channelId}/view`);
+
+export const getQuote = (targetRank) =>
+  api.get("/claim/quote", { params: { targetRank } }).then((r) => r.data);
+
+export const createClaimOrder = (payload) => api.post("/claim", payload).then((r) => r.data);
+
+export const verifyPayment = (payload) => api.post("/payment/verify", payload).then((r) => r.data);
+
+export const lookupYoutubeChannel = (handle) =>
+  api.get("/youtube/lookup", { params: { handle } }).then((r) => r.data);
+
+export default api;

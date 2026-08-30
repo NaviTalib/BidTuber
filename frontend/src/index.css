@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Define Theme Variables at Root */
+:root {
+  --color-canvas: #F6F7FB;
+  --color-surface: #FFFFFF;
+  --color-edge: #E4E6F0;
+  --color-ink: #12141A;
+  --color-mute: #6B7086;
+  --color-brand: #4F46E5;
+  --color-brand-soft: #EEEEFD;
+  --color-price: #DB7B14;
+  --color-price-soft: #FDF1E1;
+  --color-online: #16A34A;
+}
+
+html.dark {
+  --color-canvas: #0A0D14;
+  --color-surface: #121624;
+  --color-edge: #1F2638;
+  --color-ink: #F3F4F6;
+  --color-mute: #8E95B0;
+  --color-brand: #6366F1;
+  --color-brand-soft: #1E1B4B;
+  --color-price: #F59E0B;
+  --color-price-soft: #2D1A04;
+  --color-online: #22C55E;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
