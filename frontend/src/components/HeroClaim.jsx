@@ -4,8 +4,9 @@ import { getQuote } from "../lib/api.js";
 const rupees = (paise) => (paise / 100).toLocaleString("en-IN");
 
 export default function HeroClaim({
-  totalVerifiedPaise,
-  totalVisitors = 150,
+  totalVerifiedPaise = 0,
+  totalVisitors = 0,
+  onlineNow = 1,
   onOpenClaim,
   refreshKey,
 }) {
@@ -13,6 +14,11 @@ export default function HeroClaim({
   const [currentPricePaise, setCurrentPricePaise] = useState(4000100);
   const [handleInput, setHandleInput] = useState("");
   const [isChangingRank, setIsChangingRank] = useState(false);
+
+  // Clear handle input whenever payment succeeds (refreshKey increments)
+  useEffect(() => {
+    setHandleInput("");
+  }, [refreshKey]);
 
   // Fetch fresh minimum price whenever rank or refreshKey changes
   useEffect(() => {
@@ -27,7 +33,6 @@ export default function HeroClaim({
       .catch((err) => console.error("Error fetching quote:", err))
       .finally(() => {
         if (isSubscribed) {
-          // Subtle timeout for smooth fade-in/out transition effect
           setTimeout(() => setIsChangingRank(false), 150);
         }
       });
@@ -56,14 +61,25 @@ export default function HeroClaim({
     <section className="relative overflow-hidden pt-12 pb-16 px-4 text-center">
       <div className="max-w-4xl mx-auto flex flex-col items-center">
         
-        {/* Visitors & Pill Badge */}
+        {/* Visitors & Pill Badges */}
         <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+          
+          {/* Real-time Socket Live Online Badge */}
+          {/* <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border border-edge shadow-sm text-xs font-mono text-mute">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-bold text-ink">{onlineNow}</span> Live Now
+          </div> */}
+
+          <span className="text-edge font-mono text-xs">•</span>
+
+          {/* All-Time Total Visitor Badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border border-edge shadow-sm text-xs font-mono text-mute">
             <span className="font-bold text-ink">{totalVisitors.toLocaleString()}</span> Total Visitors
           </div>
 
           <span className="text-edge font-mono text-xs hidden sm:inline">•</span>
 
+          {/* YouTube Category Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand/10 border border-brand/20 text-[11px] font-mono font-semibold text-brand tracking-wider uppercase">
             <span className="w-1.5 h-1.5 rounded-full bg-brand" />
             YOUTUBE CHANNEL PLACEMENT BOARD
@@ -85,7 +101,7 @@ export default function HeroClaim({
               ▼
             </button>
 
-            {/* Rank Number with Smooth Transition Animation */}
+            {/* Rank Number with Transition Animation */}
             <span
               className={`font-mono font-extrabold text-brand px-3 min-w-[3.5rem] transition-all duration-200 ease-out transform ${
                 isChangingRank
@@ -109,7 +125,7 @@ export default function HeroClaim({
 
           <span>for</span>
 
-          {/* Price with Smooth Fade Transition */}
+          {/* Price Display */}
           <span
             className={`font-mono text-price transition-all duration-200 ease-out ${
               isChangingRank
@@ -121,7 +137,7 @@ export default function HeroClaim({
           </span>
         </h1>
 
-        {/* Subtext Quote Banner */}
+        {/* Quote Disclaimer */}
         <p className="mt-4 text-xs sm:text-sm text-mute max-w-xl transition-opacity duration-200">
           Minimum required bid for <strong className="text-ink">#{selectedRank}</strong> is{" "}
           <strong className="text-price font-mono">₹{rupees(currentPricePaise)}</strong>. You can enter a higher custom amount inside the checkout modal to hold your spot longer.
@@ -146,7 +162,7 @@ export default function HeroClaim({
           </div>
         </form>
 
-        {/* Total Verified Placement Pill */}
+        {/* Total Placements Stats */}
         <div className="mt-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface border border-edge text-xs font-mono text-mute shadow-sm">
           <span className="font-bold text-ink">₹{rupees(totalVerifiedPaise)}</span> verified in total placements
         </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { io } from "socket.io-client";
 import Header from "./components/Header.jsx";
 import HeroClaim from "./components/HeroClaim.jsx";
 import Sidebar from "./components/Sidebar.jsx";
@@ -9,15 +10,20 @@ import Footer from "./components/Footer.jsx";
 import { getLeaderboard, getCategories, getMovements } from "./lib/api.js";
 
 const ITEMS_PER_PAGE = 10;
+const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
 export default function App() {
   const [period, setPeriod] = useState("alltime");
   const [category, setCategory] = useState("all");
-  
+
   const [channels, setChannels] = useState([]);
   const [categories, setCategories] = useState([]);
   const [movements, setMovements] = useState([]);
-  const [stats, setStats] = useState({ onlineNow: 0, totalVerifiedPaise: 0 });
+  const [stats, setStats] = useState({
+    onlineNow: 0,
+    totalVerifiedPaise: 0,
+    totalVisitors: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   // Pagination State
@@ -28,6 +34,23 @@ export default function App() {
   const [modalAmountPaise, setModalAmountPaise] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Initialize WebSockets for real-time live visitors
+  useEffect(() => {
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket", "polling"],
+    });
+
+    socket.on("stats_update", (data) => {
+      if (typeof data.onlineNow === "number") {
+        setStats((prev) => ({ ...prev, onlineNow: data.onlineNow }));
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
   useEffect(() => {
     getCategories().then(setCategories).catch(console.error);
   }, []);
@@ -36,18 +59,17 @@ export default function App() {
     let isSubscribed = true;
     setIsLoading(true);
 
-    Promise.all([
-      getLeaderboard(period, category),
-      getMovements()
-    ])
+    Promise.all([getLeaderboard(period, category), getMovements()])
       .then(([leaderboardData, movementsData]) => {
         if (!isSubscribed) return;
-        setChannels(leaderboardData.channels);
-        setStats({
-          onlineNow: leaderboardData.onlineNow,
-          totalVerifiedPaise: leaderboardData.totalVerifiedPaise,
-        });
-        setMovements(movementsData);
+        setChannels(leaderboardData.channels || []);
+        setStats((prev) => ({
+          ...prev,
+          onlineNow: leaderboardData.onlineNow ?? prev.onlineNow,
+          totalVerifiedPaise: leaderboardData.totalVerifiedPaise || 0,
+          totalVisitors: leaderboardData.totalVisitors || 0,
+        }));
+        setMovements(movementsData || []);
       })
       .catch(console.error)
       .finally(() => {
@@ -78,6 +100,7 @@ export default function App() {
 
   const handleSuccess = () => {
     setModalRank(null);
+    setModalHandle(""); // Reset handle state so hero input resets cleanly
     setModalAmountPaise(null);
     setRefreshKey((prev) => prev + 1);
     refresh();
@@ -91,9 +114,11 @@ export default function App() {
   return (
     <div className="min-h-screen bg-canvas">
       <Header period={period} onPeriodChange={setPeriod} onlineNow={stats.onlineNow} />
-      
+
       <HeroClaim
         totalVerifiedPaise={stats.totalVerifiedPaise}
+        totalVisitors={stats.totalVisitors}
+        onlineNow={stats.onlineNow}
         onOpenClaim={openClaim}
         refreshKey={refreshKey}
       />
@@ -114,7 +139,7 @@ export default function App() {
             <div className="flex flex-col gap-2">
               {/* Map only the 10 channels for current page */}
               {currentChannels.map((c) => (
-                <ListingRow key={c.id} channel={c} onClaimClick={openClaim} />
+                <ListingRow key={c.id || c._id || c.rank} channel={c} onClaimClick={openClaim} />
               ))}
             </div>
           )}
@@ -173,15 +198,15 @@ export default function App() {
       <Footer />
 
       <ClaimModal
-  open={modalRank !== null}
-  targetRank={modalRank}
-  initialHandle={modalHandle}
-  initialAmountPaise={modalAmountPaise}
-  categories={categories.length ? categories : ["Other"]}
-  channels={channels} // Pass active channels array here
-  onClose={() => setModalRank(null)}
-  onSuccess={handleSuccess}
-/>
+        open={modalRank !== null}
+        targetRank={modalRank}
+        initialHandle={modalHandle}
+        initialAmountPaise={modalAmountPaise}
+        categories={categories.length ? categories : ["Other"]}
+        channels={channels}
+        onClose={() => setModalRank(null)}
+        onSuccess={handleSuccess}
+      />
     </div>
   );
 }

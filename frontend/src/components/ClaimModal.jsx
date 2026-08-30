@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
 import { getQuote, createClaimOrder, verifyPayment, lookupYoutubeChannel } from "../lib/api.js";
+import TermsModal from "./TermsModal.jsx";
 
 const rupees = (paise) => (paise / 100).toLocaleString("en-IN");
 
-export default function ClaimModal({ 
-  open, 
-  targetRank, 
-  initialHandle, 
-  initialAmountPaise, 
-  categories, 
-  channels = [], // Accept channels array
-  onClose, 
-  onSuccess 
+export default function ClaimModal({
+  open,
+  targetRank,
+  initialHandle,
+  initialAmountPaise,
+  categories,
+  channels = [],
+  onClose,
+  onSuccess,
 }) {
   const [form, setForm] = useState({
     name: "",
@@ -21,7 +22,7 @@ export default function ClaimModal({
     category: categories[0] || "Other",
     subscribers: "",
   });
-  
+
   const [calculatedRank, setCalculatedRank] = useState(targetRank);
   const [quote, setQuote] = useState(null);
   const [customAmountRupees, setCustomAmountRupees] = useState("");
@@ -30,24 +31,30 @@ export default function ClaimModal({
   const [handle, setHandle] = useState("");
   const [lookupStatus, setLookupStatus] = useState("idle");
   const [lookupError, setLookupError] = useState("");
+  const [showTerms, setShowTerms] = useState(false);
+
+  // Helper function to reset all modal inputs back to initial blank state
+  const resetAllInputs = () => {
+    setForm({
+      name: "",
+      url: "",
+      thumbnailUrl: "",
+      description: "",
+      category: categories[0] || "Other",
+      subscribers: "",
+    });
+    setHandle("");
+    setCustomAmountRupees("");
+    setLookupStatus("idle");
+    setLookupError("");
+    setError("");
+    setStatus("idle");
+  };
 
   useEffect(() => {
     if (!open) {
-      setForm({
-        name: "",
-        url: "",
-        thumbnailUrl: "",
-        description: "",
-        category: categories[0] || "Other",
-        subscribers: "",
-      });
-      setQuote(null);
-      setCustomAmountRupees("");
-      setStatus("idle");
-      setError("");
-      setHandle("");
-      setLookupStatus("idle");
-      setLookupError("");
+      resetAllInputs();
+      setShowTerms(false);
     }
   }, [open, categories]);
 
@@ -59,7 +66,10 @@ export default function ClaimModal({
     getQuote(targetRank)
       .then((q) => {
         setQuote(q);
-        const defaultPaise = initialAmountPaise && initialAmountPaise >= q.amountPaise ? initialAmountPaise : q.amountPaise;
+        const defaultPaise =
+          initialAmountPaise && initialAmountPaise >= q.amountPaise
+            ? initialAmountPaise
+            : q.amountPaise;
         setCustomAmountRupees((defaultPaise / 100).toString());
         setStatus("idle");
       })
@@ -78,7 +88,6 @@ export default function ClaimModal({
 
   if (!open) return null;
 
-  // Recalculate achievable rank live whenever user types bid amount
   const handleAmountChange = (e) => {
     const val = e.target.value;
     setCustomAmountRupees(val);
@@ -90,7 +99,6 @@ export default function ClaimModal({
       if (channels.length > 0) {
         let bestAchievableRank = channels.length + 1;
 
-        // Find the top-most rank outbidded by this bid amount (must exceed rank price by 100 paise / ₹1)
         for (let i = 0; i < channels.length; i++) {
           const priceToBeat = channels[i].price_paise || channels[i].pricePaise || 0;
           if (userPaise >= priceToBeat + 100) {
@@ -153,7 +161,11 @@ export default function ClaimModal({
     setStatus("paying");
 
     try {
-      const order = await createClaimOrder({ ...form, targetRank: calculatedRank, amountPaise: finalPaise });
+      const order = await createClaimOrder({
+        ...form,
+        targetRank: calculatedRank,
+        amountPaise: finalPaise,
+      });
 
       const rzp = new window.Razorpay({
         key: order.keyId,
@@ -171,6 +183,9 @@ export default function ClaimModal({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature,
             });
+
+            // Resets all input boxes back to empty prior to completing callback
+            resetAllInputs();
             onSuccess(result);
           } catch (err) {
             console.error(err);
@@ -191,201 +206,216 @@ export default function ClaimModal({
   const minRupees = quote ? quote.amountPaise / 100 : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-ink/60 backdrop-blur-md transition-all">
-      <div className="w-full sm:max-w-lg bg-surface border border-edge rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-        
-        {/* Header displays the updated calculated rank badge dynamically */}
-        <div className="flex items-center justify-between pb-4 border-b border-edge">
-          <div className="flex items-center gap-2">
-            <span className="font-mono font-bold text-sm bg-brand/10 text-brand px-2.5 py-1 rounded-full border border-brand/20 transition-all">
-              Rank #{calculatedRank}
-            </span>
-            <h2 className="font-display font-bold text-xl text-ink">
-              Claim Placement
-            </h2>
-          </div>
-          <button 
-            onClick={onClose} 
-            className="w-8 h-8 rounded-full bg-canvas hover:bg-edge/50 flex items-center justify-center text-mute hover:text-ink text-lg transition-colors"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Bid Input updates calculated rank live */}
-        {quote && (
-          <div className="mt-4 p-3.5 bg-priceSoft/50 border border-price/20 rounded-xl flex items-center justify-between gap-3">
-            <div>
-              <span className="text-xs text-mute font-medium block">Bid Amount (₹)</span>
-              <span className="text-[11px] text-mute">Min required: ₹{minRupees}</span>
-            </div>
-            
-            <div className="flex items-center bg-canvas border border-edge focus-within:border-price rounded-xl px-3 py-1">
-              <span className="font-mono font-bold text-price text-lg mr-1">₹</span>
-              <input
-                type="number"
-                min={minRupees}
-                step="1"
-                value={customAmountRupees}
-                onChange={handleAmountChange}
-                className="w-24 bg-transparent font-mono font-extrabold text-price text-lg outline-none text-right"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Auto Fetch Section */}
-        <div className="mt-5 space-y-2">
-          <label className="text-[11px] uppercase tracking-wider font-mono font-semibold text-mute block">
-            Auto-fill from YouTube
-          </label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <input
-                placeholder="@handle or channel URL"
-                value={handle}
-                onChange={(e) => setHandle(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), fetchFromHandle())}
-                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink placeholder:text-mute/60 transition"
-              />
+    <>
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-ink/60 backdrop-blur-md transition-all">
+        <div className="w-full sm:max-w-lg bg-surface border border-edge rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between pb-4 border-b border-edge">
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold text-sm bg-brand/10 text-brand px-2.5 py-1 rounded-full border border-brand/20 transition-all">
+                Rank #{calculatedRank}
+              </span>
+              <h2 className="font-display font-bold text-xl text-ink">
+                Claim Placement
+              </h2>
             </div>
             <button
-              type="button"
-              onClick={() => fetchFromHandle()}
-              disabled={lookupStatus === "loading" || !handle.trim()}
-              className="px-4 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-brand hover:bg-brand hover:text-white text-sm font-semibold transition-all disabled:opacity-50 shrink-0 flex items-center gap-2"
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-canvas hover:bg-edge/50 flex items-center justify-center text-mute hover:text-ink text-lg transition-colors"
             >
-              {lookupStatus === "loading" ? (
-                <>
-                  <span className="w-3.5 h-3.5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-                  Fetching
-                </>
-              ) : (
-                "Fetch"
-              )}
+              ✕
             </button>
           </div>
 
-          {lookupStatus === "done" && (
-            <div className="mt-2 p-3 bg-canvas border border-edge rounded-xl flex items-center gap-3">
-              {form.thumbnailUrl ? (
-                <img src={form.thumbnailUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-edge" />
-              ) : (
-                <div className="w-9 h-9 rounded-full bg-surface border border-edge flex items-center justify-center font-mono text-xs font-bold text-mute">
-                  {form.name?.slice(0, 2).toUpperCase()}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-ink truncate">{form.name}</p>
-                <p className="text-[11px] text-mute truncate">{form.subscribers ? `${form.subscribers} subscribers` : form.url}</p>
+          {/* Bid Amount Selector */}
+          {quote && (
+            <div className="mt-4 p-3.5 bg-priceSoft/50 border border-price/20 rounded-xl flex items-center justify-between gap-3">
+              <div>
+                <span className="text-xs text-mute font-medium block">Bid Amount (₹)</span>
+                <span className="text-[11px] text-mute">Min required: ₹{minRupees}</span>
               </div>
-              <span className="text-[10px] bg-online/10 text-online border border-online/20 px-2 py-0.5 rounded-full font-semibold">
-                Verified
-              </span>
+
+              <div className="flex items-center bg-canvas border border-edge focus-within:border-price rounded-xl px-3 py-1">
+                <span className="font-mono font-bold text-price text-lg mr-1">₹</span>
+                <input
+                  type="number"
+                  min={minRupees}
+                  step="1"
+                  value={customAmountRupees}
+                  onChange={handleAmountChange}
+                  className="w-24 bg-transparent font-mono font-extrabold text-price text-lg outline-none text-right"
+                />
+              </div>
             </div>
           )}
 
-          {lookupStatus === "error" && (
-            <p className="text-xs text-red-500 font-medium">{lookupError}</p>
-          )}
-        </div>
-
-        {/* Form Fields */}
-        <form onSubmit={submit} className="mt-5 space-y-3.5">
-          <div>
-            <label className="text-xs font-medium text-mute mb-1 block">Channel Name *</label>
-            <input
-              required
-              placeholder="e.g. Marques Brownlee"
-              value={form.name}
-              onChange={update("name")}
-              className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink transition"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-mute mb-1 block">Channel URL *</label>
-            <input
-              required
-              type="url"
-              placeholder="https://youtube.com/@mkbhd"
-              value={form.url}
-              onChange={update("url")}
-              className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink transition"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-mute mb-1 block">Category</label>
-              <select
-                value={form.category}
-                onChange={update("category")}
-                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3 py-2.5 text-sm text-ink transition"
+          {/* YouTube Auto-fill */}
+          <div className="mt-5 space-y-2">
+            <label className="text-[11px] uppercase tracking-wider font-mono font-semibold text-mute block">
+              Auto-fill from YouTube
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  placeholder="@handle or channel URL"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), fetchFromHandle())}
+                  className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink placeholder:text-mute/60 transition"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => fetchFromHandle()}
+                disabled={lookupStatus === "loading" || !handle.trim()}
+                className="px-4 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-brand hover:bg-brand hover:text-white text-sm font-semibold transition-all disabled:opacity-50 shrink-0 flex items-center gap-2"
               >
-                {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+                {lookupStatus === "loading" ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+                    Fetching
+                  </>
+                ) : (
+                  "Fetch"
+                )}
+              </button>
             </div>
 
+            {lookupStatus === "done" && (
+              <div className="mt-2 p-3 bg-canvas border border-edge rounded-xl flex items-center gap-3">
+                {form.thumbnailUrl ? (
+                  <img src={form.thumbnailUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-edge" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-surface border border-edge flex items-center justify-center font-mono text-xs font-bold text-mute">
+                    {form.name?.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-ink truncate">{form.name}</p>
+                  <p className="text-[11px] text-mute truncate">{form.subscribers ? `${form.subscribers} subscribers` : form.url}</p>
+                </div>
+                <span className="text-[10px] bg-online/10 text-online border border-online/20 px-2 py-0.5 rounded-full font-semibold">
+                  Verified
+                </span>
+              </div>
+            )}
+
+            {lookupStatus === "error" && (
+              <p className="text-xs text-red-500 font-medium">{lookupError}</p>
+            )}
+          </div>
+
+          {/* Form */}
+          <form onSubmit={submit} className="mt-5 space-y-3.5">
             <div>
-              <label className="text-xs font-medium text-mute mb-1 block">Subscribers (optional)</label>
+              <label className="text-xs font-medium text-mute mb-1 block">Channel Name *</label>
               <input
-                placeholder="e.g. 18.5M"
-                value={form.subscribers}
-                onChange={update("subscribers")}
+                required
+                placeholder="e.g. Marques Brownlee"
+                value={form.name}
+                onChange={update("name")}
                 className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink transition"
               />
             </div>
-          </div>
 
-          <div>
-            <label className="text-xs font-medium text-mute mb-1 block">Thumbnail URL (optional)</label>
-            <input
-              type="url"
-              placeholder="https://..."
-              value={form.thumbnailUrl}
-              onChange={update("thumbnailUrl")}
-              className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink transition"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-mute mb-1 block">Short Pitch / Bio (optional)</label>
-            <textarea
-              placeholder="What is your channel about in 1 sentence?"
-              value={form.description}
-              onChange={update("description")}
-              rows={2}
-              className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink resize-none transition"
-            />
-          </div>
-
-          {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-500 font-medium">
-              {error}
+            <div>
+              <label className="text-xs font-medium text-mute mb-1 block">Channel URL *</label>
+              <input
+                required
+                type="url"
+                placeholder="https://youtube.com/@mkbhd"
+                value={form.url}
+                onChange={update("url")}
+                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink transition"
+              />
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={status === "paying" || status === "quoting"}
-            className="w-full mt-2 py-3 rounded-xl bg-brand text-white font-semibold text-sm hover:bg-brand/90 active:scale-[0.99] transition-all disabled:opacity-50 shadow-lg shadow-brand/20 flex items-center justify-center gap-2"
-          >
-            {status === "paying" ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Opening Razorpay...
-              </>
-            ) : (
-              `Pay ₹${(getFinalPaise() / 100).toLocaleString("en-IN")} & Claim Rank #${calculatedRank}`
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-mute mb-1 block">Category</label>
+                <select
+                  value={form.category}
+                  onChange={update("category")}
+                  className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3 py-2.5 text-sm text-ink transition"
+                >
+                  {categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-mute mb-1 block">Subscribers (optional)</label>
+                <input
+                  placeholder="e.g. 18.5M"
+                  value={form.subscribers}
+                  onChange={update("subscribers")}
+                  className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink transition"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-mute mb-1 block">Thumbnail URL (optional)</label>
+              <input
+                type="url"
+                placeholder="https://..."
+                value={form.thumbnailUrl}
+                onChange={update("thumbnailUrl")}
+                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink transition"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-mute mb-1 block">Short Pitch / Bio (optional)</label>
+              <textarea
+                placeholder="What is your channel about in 1 sentence?"
+                value={form.description}
+                onChange={update("description")}
+                rows={2}
+                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink resize-none transition"
+              />
+            </div>
+
+            {error && (
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-500 font-medium">
+                {error}
+              </div>
             )}
-          </button>
-        </form>
+
+            <button
+              type="submit"
+              disabled={status === "paying" || status === "quoting"}
+              className="w-full mt-2 py-3 rounded-xl bg-brand text-white font-semibold text-sm hover:bg-brand/90 active:scale-[0.99] transition-all disabled:opacity-50 shadow-lg shadow-brand/20 flex items-center justify-center gap-2"
+            >
+              {status === "paying" ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Opening Razorpay...
+                </>
+              ) : (
+                `Pay ₹${(getFinalPaise() / 100).toLocaleString("en-IN")} & Claim Rank #${calculatedRank}`
+              )}
+            </button>
+
+            <p className="text-[11px] text-mute text-center pt-1">
+              By placing a bid, you agree to our{" "}
+              <button
+                type="button"
+                onClick={() => setShowTerms(true)}
+                className="text-brand font-medium underline hover:text-brand/80 transition-colors"
+              >
+                Terms of Service
+              </button>
+              . All bids are final.
+            </p>
+          </form>
+        </div>
       </div>
-    </div>
+
+      <TermsModal open={showTerms} onClose={() => setShowTerms(false)} />
+    </>
   );
 }

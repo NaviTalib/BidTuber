@@ -19,11 +19,20 @@ router.get("/", async (req, res) => {
 
     const channels = await Channel.find(query).sort({ rank: 1 }).lean();
 
-    const totalAgg = await Channel.aggregate([
+    // Aggregate both total price in paise and total visitors (sum of channel views)
+    const statsAgg = await Channel.aggregate([
       { $match: { status: "active" } },
-      { $group: { _id: null, total: { $sum: "$pricePaise" } } },
+      {
+        $group: {
+          _id: null,
+          totalPaise: { $sum: "$pricePaise" },
+          totalVisitors: { $sum: "$views" },
+        },
+      },
     ]);
-    const totalVerifiedPaise = totalAgg[0]?.total || 0;
+
+    const totalVerifiedPaise = statsAgg[0]?.totalPaise || 0;
+    const totalVisitors = statsAgg[0]?.totalVisitors || 0;
 
     const onlineNow = 40 + Math.floor(Math.random() * 60);
 
@@ -42,6 +51,7 @@ router.get("/", async (req, res) => {
         claimed_at: c.claimedAt,
       })),
       totalVerifiedPaise,
+      totalVisitors, // 👈 Added totalVisitors to JSON response
       onlineNow,
     });
   } catch (err) {

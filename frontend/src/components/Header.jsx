@@ -1,6 +1,6 @@
 import ThemeToggle from "./ThemeToggle.jsx";
 
-export default function Header({ period, onPeriodChange, onlineNow }) {
+export default function Header({ period, onPeriodChange }) {
   return (
     <header className="border-b border-edge bg-surface/80 backdrop-blur-md sticky top-0 z-30 transition-colors">
       <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
@@ -37,16 +37,8 @@ export default function Header({ period, onPeriodChange, onlineNow }) {
           </div>
         </div>
 
-        {/* Status Badge, Links, Theme Toggle & CTA */}
+        {/* Links, Theme Toggle & CTA */}
         <div className="flex items-center gap-3 sm:gap-5">
-          <span className="hidden sm:inline-flex items-center gap-2 text-xs font-mono font-medium text-mute bg-canvas border border-edge/60 px-2.5 py-1 rounded-full">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-online opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-online" />
-            </span>
-            {onlineNow.toLocaleString()} watching
-          </span>
-
           <nav className="hidden md:flex items-center gap-4 text-sm font-medium text-mute">
             <a href="#board" className="hover:text-ink transition-colors">Board</a>
             <a href="#categories" className="hover:text-ink transition-colors">Categories</a>
