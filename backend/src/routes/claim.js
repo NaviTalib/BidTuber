@@ -1,3 +1,4 @@
+// routes/claim.js
 import { Router } from "express";
 import Channel from "../models/Channel.js";
 import Order from "../models/Order.js";
@@ -7,13 +8,21 @@ import { CATEGORIES } from "../constants.js";
 const router = Router();
 const MIN_CLAIM_PAISE = Number(process.env.MIN_CLAIM_PAISE || 500);
 
-// What it costs to claim a given rank right now.
-// An occupied rank must be out-bid by ₹1. An open rank at the bottom
-// of the board costs the floor price.
+// Calculates minimum price required to take or hold a rank
 async function priceToClaim(targetRank) {
+  // 1. Check if target rank itself is occupied (must outbid current occupant by ₹1)
   const occupant = await Channel.findOne({ rank: targetRank, status: "active" }).lean();
-  if (!occupant) return MIN_CLAIM_PAISE;
-  return occupant.pricePaise + 100;
+  if (occupant) {
+    return occupant.pricePaise + 100;
+  }
+
+  // 2. If target rank is open, check if there is a rank ABOVE it that sets a higher floor price
+  const higherOccupant = await Channel.findOne({ rank: { $lt: targetRank }, status: "active" })
+    .sort({ rank: -1 })
+    .lean();
+
+  // Price cannot be lower than the floor price
+  return Math.max(MIN_CLAIM_PAISE, higherOccupant ? Math.floor(higherOccupant.pricePaise * 0.5) : MIN_CLAIM_PAISE);
 }
 
 async function nextOpenRank() {
@@ -36,7 +45,7 @@ router.get("/quote", async (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { name, url, thumbnailUrl, description, category, subscribers, targetRank } = req.body;
+    const { name, url, thumbnailUrl, description, category, subscribers, targetRank, amountPaise } = req.body;
 
     if (!name || !url || !category) {
       return res.status(400).json({ error: "name, url and category are required" });
@@ -46,10 +55,22 @@ router.post("/", async (req, res) => {
     }
 
     const rank = targetRank && targetRank > 0 ? Number(targetRank) : await nextOpenRank();
-    const amountPaise = await priceToClaim(rank);
+    const minRequiredPaise = await priceToClaim(rank);
+
+    let finalAmountPaise = minRequiredPaise;
+    if (amountPaise !== undefined && amountPaise !== null) {
+      const parsedUserPaise = Number(amountPaise);
+      // Validate that user bid meets minimum rank requirement
+      if (isNaN(parsedUserPaise) || parsedUserPaise < minRequiredPaise) {
+        return res.status(400).json({
+          error: `Minimum required bid for rank #${rank} is ₹${(minRequiredPaise / 100).toLocaleString("en-IN")}`,
+        });
+      }
+      finalAmountPaise = parsedUserPaise;
+    }
 
     const order = await razorpay.orders.create({
-      amount: amountPaise,
+      amount: finalAmountPaise,
       currency: "INR",
       receipt: `bidtuber_${Date.now()}`,
       notes: { channel_name: name, target_rank: String(rank) },
@@ -60,13 +81,13 @@ router.post("/", async (req, res) => {
       channelId: null,
       channelPayload: { name, url, thumbnailUrl, description, category, subscribers },
       targetRank: rank,
-      amountPaise,
+      amountPaise: finalAmountPaise,
       status: "created",
     });
 
     res.json({
       orderId: order.id,
-      amountPaise,
+      amountPaise: finalAmountPaise,
       currency: "INR",
       targetRank: rank,
       keyId: process.env.RAZORPAY_KEY_ID,

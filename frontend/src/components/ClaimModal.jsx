@@ -3,7 +3,16 @@ import { getQuote, createClaimOrder, verifyPayment, lookupYoutubeChannel } from 
 
 const rupees = (paise) => (paise / 100).toLocaleString("en-IN");
 
-export default function ClaimModal({ open, targetRank, initialHandle, categories, onClose, onSuccess }) {
+export default function ClaimModal({ 
+  open, 
+  targetRank, 
+  initialHandle, 
+  initialAmountPaise, 
+  categories, 
+  channels = [], // Accept channels array
+  onClose, 
+  onSuccess 
+}) {
   const [form, setForm] = useState({
     name: "",
     url: "",
@@ -12,23 +21,53 @@ export default function ClaimModal({ open, targetRank, initialHandle, categories
     category: categories[0] || "Other",
     subscribers: "",
   });
+  
+  const [calculatedRank, setCalculatedRank] = useState(targetRank);
   const [quote, setQuote] = useState(null);
-  const [status, setStatus] = useState("idle"); // idle | quoting | paying | error
+  const [customAmountRupees, setCustomAmountRupees] = useState("");
+  const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
   const [handle, setHandle] = useState("");
-  const [lookupStatus, setLookupStatus] = useState("idle"); // idle | loading | done | error
+  const [lookupStatus, setLookupStatus] = useState("idle");
   const [lookupError, setLookupError] = useState("");
 
   useEffect(() => {
+    if (!open) {
+      setForm({
+        name: "",
+        url: "",
+        thumbnailUrl: "",
+        description: "",
+        category: categories[0] || "Other",
+        subscribers: "",
+      });
+      setQuote(null);
+      setCustomAmountRupees("");
+      setStatus("idle");
+      setError("");
+      setHandle("");
+      setLookupStatus("idle");
+      setLookupError("");
+    }
+  }, [open, categories]);
+
+  useEffect(() => {
     if (!open || !targetRank) return;
+    setCalculatedRank(targetRank);
     setStatus("quoting");
+
     getQuote(targetRank)
       .then((q) => {
         setQuote(q);
+        const defaultPaise = initialAmountPaise && initialAmountPaise >= q.amountPaise ? initialAmountPaise : q.amountPaise;
+        setCustomAmountRupees((defaultPaise / 100).toString());
         setStatus("idle");
       })
-      .catch(() => setStatus("error"));
-  }, [open, targetRank]);
+      .catch((err) => {
+        console.error(err);
+        setStatus("error");
+      });
+  }, [open, targetRank, initialAmountPaise]);
 
   useEffect(() => {
     if (open && initialHandle) {
@@ -38,6 +77,31 @@ export default function ClaimModal({ open, targetRank, initialHandle, categories
   }, [open, initialHandle]);
 
   if (!open) return null;
+
+  // Recalculate achievable rank live whenever user types bid amount
+  const handleAmountChange = (e) => {
+    const val = e.target.value;
+    setCustomAmountRupees(val);
+
+    const parsedRupees = parseFloat(val);
+    if (!isNaN(parsedRupees) && parsedRupees > 0) {
+      const userPaise = Math.round(parsedRupees * 100);
+
+      if (channels.length > 0) {
+        let bestAchievableRank = channels.length + 1;
+
+        // Find the top-most rank outbidded by this bid amount (must exceed rank price by 100 paise / ₹1)
+        for (let i = 0; i < channels.length; i++) {
+          const priceToBeat = channels[i].price_paise || channels[i].pricePaise || 0;
+          if (userPaise >= priceToBeat + 100) {
+            bestAchievableRank = channels[i].rank;
+            break;
+          }
+        }
+        setCalculatedRank(bestAchievableRank);
+      }
+    }
+  };
 
   const update = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
@@ -63,17 +127,33 @@ export default function ClaimModal({ open, targetRank, initialHandle, categories
     }
   };
 
+  const getFinalPaise = () => {
+    const parsedRupees = parseFloat(customAmountRupees);
+    if (!isNaN(parsedRupees) && parsedRupees > 0) {
+      return Math.round(parsedRupees * 100);
+    }
+    return quote ? quote.amountPaise : 0;
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setError("");
+
     if (!form.name || !form.url) {
       setError("Channel name and URL are required.");
       return;
     }
+
+    const finalPaise = getFinalPaise();
+    if (quote && finalPaise < quote.amountPaise) {
+      setError(`Minimum required bid for Rank #${calculatedRank} is ₹${rupees(quote.amountPaise)}.`);
+      return;
+    }
+
     setStatus("paying");
 
     try {
-      const order = await createClaimOrder({ ...form, targetRank });
+      const order = await createClaimOrder({ ...form, targetRank: calculatedRank, amountPaise: finalPaise });
 
       const rzp = new window.Razorpay({
         key: order.keyId,
@@ -93,13 +173,12 @@ export default function ClaimModal({ open, targetRank, initialHandle, categories
             });
             onSuccess(result);
           } catch (err) {
-            setError("Payment succeeded but we could not confirm placement. Contact support with your payment ID.");
+            console.error(err);
+            setError("Payment succeeded but placement confirmation failed. Contact support.");
             setStatus("error");
           }
         },
-        modal: {
-          ondismiss: () => setStatus("idle"),
-        },
+        modal: { ondismiss: () => setStatus("idle") },
       });
 
       rzp.open();
@@ -109,15 +188,17 @@ export default function ClaimModal({ open, targetRank, initialHandle, categories
     }
   };
 
+  const minRupees = quote ? quote.amountPaise / 100 : 0;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-ink/60 backdrop-blur-md transition-all">
       <div className="w-full sm:max-w-lg bg-surface border border-edge rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         
-        {/* Header */}
+        {/* Header displays the updated calculated rank badge dynamically */}
         <div className="flex items-center justify-between pb-4 border-b border-edge">
           <div className="flex items-center gap-2">
-            <span className="font-mono font-bold text-sm bg-brand/10 text-brand px-2.5 py-1 rounded-full border border-brand/20">
-              Rank #{targetRank}
+            <span className="font-mono font-bold text-sm bg-brand/10 text-brand px-2.5 py-1 rounded-full border border-brand/20 transition-all">
+              Rank #{calculatedRank}
             </span>
             <h2 className="font-display font-bold text-xl text-ink">
               Claim Placement
@@ -131,13 +212,25 @@ export default function ClaimModal({ open, targetRank, initialHandle, categories
           </button>
         </div>
 
-        {/* Pricing Summary Box */}
+        {/* Bid Input updates calculated rank live */}
         {quote && (
-          <div className="mt-4 p-3.5 bg-priceSoft/50 border border-price/20 rounded-xl flex items-center justify-between">
-            <span className="text-xs text-mute font-medium">Placement Fee</span>
-            <span className="font-mono text-price font-extrabold text-lg">
-              ₹{rupees(quote.amountPaise)}
-            </span>
+          <div className="mt-4 p-3.5 bg-priceSoft/50 border border-price/20 rounded-xl flex items-center justify-between gap-3">
+            <div>
+              <span className="text-xs text-mute font-medium block">Bid Amount (₹)</span>
+              <span className="text-[11px] text-mute">Min required: ₹{minRupees}</span>
+            </div>
+            
+            <div className="flex items-center bg-canvas border border-edge focus-within:border-price rounded-xl px-3 py-1">
+              <span className="font-mono font-bold text-price text-lg mr-1">₹</span>
+              <input
+                type="number"
+                min={minRupees}
+                step="1"
+                value={customAmountRupees}
+                onChange={handleAmountChange}
+                className="w-24 bg-transparent font-mono font-extrabold text-price text-lg outline-none text-right"
+              />
+            </div>
           </div>
         )}
 
@@ -197,7 +290,7 @@ export default function ClaimModal({ open, targetRank, initialHandle, categories
           )}
         </div>
 
-        {/* Form */}
+        {/* Form Fields */}
         <form onSubmit={submit} className="mt-5 space-y-3.5">
           <div>
             <label className="text-xs font-medium text-mute mb-1 block">Channel Name *</label>
@@ -287,10 +380,8 @@ export default function ClaimModal({ open, targetRank, initialHandle, categories
                 <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Opening Razorpay...
               </>
-            ) : quote ? (
-              `Pay ₹${rupees(quote.amountPaise)} & Claim Rank #${targetRank}`
             ) : (
-              "Fetching Pricing..."
+              `Pay ₹${(getFinalPaise() / 100).toLocaleString("en-IN")} & Claim Rank #${calculatedRank}`
             )}
           </button>
         </form>

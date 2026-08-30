@@ -8,6 +8,8 @@ import MovementFeed from "./components/MovementFeed.jsx";
 import Footer from "./components/Footer.jsx";
 import { getLeaderboard, getCategories, getMovements } from "./lib/api.js";
 
+const ITEMS_PER_PAGE = 10;
+
 export default function App() {
   const [period, setPeriod] = useState("alltime");
   const [category, setCategory] = useState("all");
@@ -18,15 +20,18 @@ export default function App() {
   const [stats, setStats] = useState({ onlineNow: 0, totalVerifiedPaise: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [modalRank, setModalRank] = useState(null);
   const [modalHandle, setModalHandle] = useState("");
+  const [modalAmountPaise, setModalAmountPaise] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Fetch initial category list once
   useEffect(() => {
     getCategories().then(setCategories).catch(console.error);
   }, []);
 
-  // Fetch main dashboard data with race condition protection
   const refresh = useCallback(() => {
     let isSubscribed = true;
     setIsLoading(true);
@@ -59,22 +64,39 @@ export default function App() {
     return cleanup;
   }, [refresh]);
 
-  const openClaim = (rank, handle = "") => {
+  // Reset to page 1 whenever category or period changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [category, period]);
+
+  const openClaim = (rank, handle = "", amountPaise = null) => {
     setModalHandle(handle);
-    // Defaults to next available rank if rank isn't provided explicitly
+    setModalAmountPaise(amountPaise);
     const nextRank = channels.length ? channels[channels.length - 1].rank + 1 : 1;
     setModalRank(rank ?? nextRank);
   };
 
   const handleSuccess = () => {
     setModalRank(null);
+    setModalAmountPaise(null);
+    setRefreshKey((prev) => prev + 1);
     refresh();
   };
+
+  // Pagination logic
+  const totalPages = Math.ceil(channels.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const currentChannels = channels.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-canvas">
       <Header period={period} onPeriodChange={setPeriod} onlineNow={stats.onlineNow} />
-      <HeroClaim totalVerifiedPaise={stats.totalVerifiedPaise} onOpenClaim={openClaim} />
+      
+      <HeroClaim
+        totalVerifiedPaise={stats.totalVerifiedPaise}
+        onOpenClaim={openClaim}
+        refreshKey={refreshKey}
+      />
 
       <section id="board" className="max-w-6xl mx-auto px-5 pb-16 flex flex-col sm:flex-row gap-8">
         <Sidebar categories={categories} selected={category} onChange={setCategory} />
@@ -90,9 +112,57 @@ export default function App() {
             </p>
           ) : (
             <div className="flex flex-col gap-2">
-              {channels.map((c) => (
+              {/* Map only the 10 channels for current page */}
+              {currentChannels.map((c) => (
                 <ListingRow key={c.id} channel={c} onClaimClick={openClaim} />
               ))}
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between border-t border-edge pt-4">
+              <span className="text-xs text-mute font-mono">
+                Page <strong className="text-ink">{currentPage}</strong> of <strong className="text-ink">{totalPages}</strong>
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg border border-edge bg-surface text-xs font-semibold text-mute hover:text-ink disabled:opacity-40 disabled:hover:text-mute transition-all"
+                >
+                  ← Previous
+                </button>
+
+                {/* Page Number Buttons */}
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg text-xs font-mono font-bold transition-all ${
+                        currentPage === pageNum
+                          ? "bg-brand text-white shadow-sm"
+                          : "bg-surface border border-edge text-mute hover:text-ink"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-lg border border-edge bg-surface text-xs font-semibold text-mute hover:text-ink disabled:opacity-40 disabled:hover:text-mute transition-all"
+                >
+                  Next →
+                </button>
+              </div>
             </div>
           )}
 
@@ -103,13 +173,15 @@ export default function App() {
       <Footer />
 
       <ClaimModal
-        open={modalRank !== null}
-        targetRank={modalRank}
-        initialHandle={modalHandle}
-        categories={categories.length ? categories : ["Other"]}
-        onClose={() => setModalRank(null)}
-        onSuccess={handleSuccess}
-      />
+  open={modalRank !== null}
+  targetRank={modalRank}
+  initialHandle={modalHandle}
+  initialAmountPaise={modalAmountPaise}
+  categories={categories.length ? categories : ["Other"]}
+  channels={channels} // Pass active channels array here
+  onClose={() => setModalRank(null)}
+  onSuccess={handleSuccess}
+/>
     </div>
   );
 }
