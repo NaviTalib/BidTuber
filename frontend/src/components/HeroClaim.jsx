@@ -3,6 +3,9 @@ import { getQuote } from "../lib/api.js";
 
 const rupees = (paise) => (paise / 100).toLocaleString("en-IN");
 
+// Helper to get a random integer between min and max (inclusive)
+const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
 export default function HeroClaim({
   totalVerifiedPaise = 0,
   totalVisitors = 0,
@@ -14,6 +17,24 @@ export default function HeroClaim({
   const [currentPricePaise, setCurrentPricePaise] = useState(4000100);
   const [handleInput, setHandleInput] = useState("");
   const [isChangingRank, setIsChangingRank] = useState(false);
+
+  // State for random live count between 1 and 100
+  const [displayOnline, setDisplayOnline] = useState(() => getRandomInt(1, 100));
+
+  // Periodically update to keep the random live count active and dynamic
+  useEffect(() => {
+    // If onlineNow is passed from WebSocket, fall back to random if onlineNow is <= 1
+    if (onlineNow > 1) {
+      setDisplayOnline(onlineNow);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setDisplayOnline(getRandomInt(1, 100));
+    }, 5000); // Changes every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [onlineNow]);
 
   // Clear handle input whenever payment succeeds (refreshKey increments)
   useEffect(() => {
@@ -64,20 +85,13 @@ export default function HeroClaim({
         {/* Visitors & Pill Badges */}
         <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
           
-          {/* Real-time Socket Live Online Badge */}
+          {/* Real-time Socket / Randomized Live Online Badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border border-edge shadow-sm text-xs font-mono text-mute">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-bold text-ink">{onlineNow}</span> Live Now
+            <span className="font-bold text-ink">{displayOnline}</span> Live Now
           </div>
 
           <span className="text-edge font-mono text-xs">•</span>
-
-          {/* All-Time Total Visitor Badge */}
-          {/* <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border border-edge shadow-sm text-xs font-mono text-mute">
-            <span className="font-bold text-ink">{totalVisitors.toLocaleString()}</span> Total Visitors
-          </div> */}
-
-          <span className="text-edge font-mono text-xs hidden sm:inline">•</span>
 
           {/* YouTube Category Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand/10 border border-brand/20 text-[11px] font-mono font-semibold text-brand tracking-wider uppercase">
