@@ -73,9 +73,9 @@ export default function HeroClaim({
           <span className="text-edge font-mono text-xs">•</span>
 
           {/* All-Time Total Visitor Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border border-edge shadow-sm text-xs font-mono text-mute">
+          {/* <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border border-edge shadow-sm text-xs font-mono text-mute">
             <span className="font-bold text-ink">{totalVisitors.toLocaleString()}</span> Total Visitors
-          </div>
+          </div> */}
 
           <span className="text-edge font-mono text-xs hidden sm:inline">•</span>
 
