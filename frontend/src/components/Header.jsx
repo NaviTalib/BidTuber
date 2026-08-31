@@ -1,6 +1,6 @@
 import ThemeToggle from "./ThemeToggle.jsx";
 
-export default function Header({ period, onPeriodChange }) {
+export default function Header({ period, onPeriodChange, onClaimClick }) {
   return (
     <header className="border-b border-edge bg-surface/80 backdrop-blur-md sticky top-0 z-30 transition-colors">
       <div className="max-w-6xl mx-auto px-3 sm:px-5 h-16 flex items-center justify-between gap-2 sm:gap-4">
@@ -47,13 +47,14 @@ export default function Header({ period, onPeriodChange }) {
 
           <ThemeToggle />
 
-          <a
-            href="#claim"
+          <button
+            type="button"
+            onClick={() => onClaimClick(1)}
             className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-brand text-white text-xs sm:text-sm font-semibold hover:bg-brand/90 active:scale-95 transition-all shadow-md shadow-brand/20 shrink-0"
           >
             <span className="hidden xs:inline">Claim rank</span>
             <span className="xs:hidden">Claim</span>
-          </a>
+          </button>
         </div>
       </div>
     </header>

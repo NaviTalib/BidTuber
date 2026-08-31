@@ -112,8 +112,13 @@ export default function App() {
   const currentChannels = channels.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   return (
-    <div className="min-h-screen bg-canvas">
-      <Header period={period} onPeriodChange={setPeriod} onlineNow={stats.onlineNow} />
+    <div className="min-h-screen bg-canvas flex flex-col antialiased selection:bg-brand/20 selection:text-brand">
+      <Header
+        period={period}
+        onPeriodChange={setPeriod}
+        onClaimClick={openClaim}
+        onlineNow={stats.onlineNow}
+      />
 
       <HeroClaim
         totalVerifiedPaise={stats.totalVerifiedPaise}
@@ -123,7 +128,7 @@ export default function App() {
         refreshKey={refreshKey}
       />
 
-      <section id="board" className="max-w-6xl mx-auto px-5 pb-16 flex flex-col sm:flex-row gap-8">
+      <section id="board" className="max-w-6xl mx-auto px-4 sm:px-5 pb-16 flex flex-col sm:flex-row gap-6 sm:gap-8 flex-1 w-full">
         <Sidebar categories={categories} selected={category} onChange={setCategory} />
 
         <div className="flex-1 min-w-0">
@@ -146,7 +151,7 @@ export default function App() {
 
           {/* Pagination Controls */}
           {totalPages > 1 && (
-            <div className="mt-6 flex items-center justify-between border-t border-edge pt-4">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-edge pt-4">
               <span className="text-xs text-mute font-mono">
                 Page <strong className="text-ink">{currentPage}</strong> of <strong className="text-ink">{totalPages}</strong>
               </span>
@@ -162,7 +167,7 @@ export default function App() {
                 </button>
 
                 {/* Page Number Buttons */}
-                <div className="flex gap-1">
+                <div className="hidden xs:flex gap-1">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
                     <button
                       key={pageNum}
