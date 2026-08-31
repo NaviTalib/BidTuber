@@ -65,10 +65,10 @@ export default function HeroClaim({
         <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
           
           {/* Real-time Socket Live Online Badge */}
-          {/* <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border border-edge shadow-sm text-xs font-mono text-mute">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface border border-edge shadow-sm text-xs font-mono text-mute">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="font-bold text-ink">{onlineNow}</span> Live Now
-          </div> */}
+          </div>
 
           <span className="text-edge font-mono text-xs">•</span>
 
