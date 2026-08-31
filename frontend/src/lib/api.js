@@ -1,7 +1,12 @@
 import axios from "axios";
 
+// Normalize base URL to ensure it always targets the /api path
+const rawBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const cleanBaseUrl = rawBaseUrl.replace(/\/+$/, ""); // Trim trailing slashes
+const baseURL = cleanBaseUrl.endsWith("/api") ? cleanBaseUrl : `${cleanBaseUrl}/api`;
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000/api",
+  baseURL,
 });
 
 export const getLeaderboard = (period, category) =>
