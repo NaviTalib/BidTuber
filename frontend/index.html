@@ -3,15 +3,81 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BidTuber — The leaderboard YouTubers pay to climb</title>
+
+    <!-- Primary SEO Meta Tags -->
+    <title>BidTuber — The Premier Pay-to-Climb YouTube Leaderboard</title>
+    <meta
+      name="title"
+      content="BidTuber — The Premier Pay-to-Climb YouTube Leaderboard"
+    />
+    <meta
+      name="description"
+      content="Claim top ranking spots, promote your YouTube channel, and drive targeted traffic on the competitive pay-to-climb YouTube leaderboard."
+    />
+    <meta
+      name="keywords"
+      content="BidTuber, YouTube leaderboard, promote YouTube channel, YouTube channel placement, bid for ranking, YouTube marketing, channel growth"
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://bidtuber.com" />
+
+    <!-- Favicon & Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://bidtuber.com/" />
+    <meta
+      property="og:title"
+      content="BidTuber — The Leaderboard YouTubers Pay to Climb"
+    />
+    <meta
+      property="og:description"
+      content="Bid, claim high-ranking spots, and gain instant visibility for your YouTube channel on BidTuber."
+    />
+    <meta property="og:image" content="https://bidtuber.com/og-image.png" />
+
+    <!-- Twitter / X Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://bidtuber.com/" />
+    <meta
+      name="twitter:title"
+      content="BidTuber — The Leaderboard YouTubers Pay to Climb"
+    />
+    <meta
+      name="twitter:description"
+      content="Bid, claim high-ranking spots, and gain instant visibility for your YouTube channel on BidTuber."
+    />
+    <meta name="twitter:image" content="https://bidtuber.com/og-image.png" />
+
+    <!-- Structured Data (JSON-LD) for Google Rich Snippets -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "BidTuber",
+        "url": "https://bidtuber.com",
+        "description": "The competitive leaderboard platform where YouTube creators bid to rank and promote their channels.",
+        "applicationCategory": "MarketingApplication",
+        "operatingSystem": "All"
+      }
+    </script>
+
+    <!-- Font & External Script Optimization -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
   </head>
   <body class="bg-canvas text-ink font-body">
+    <!-- Accessible H1 for SEO bots while React mounts -->
+    <h1 class="sr-only">
+      BidTuber — YouTube Channel Promotion & Placement Leaderboard
+    </h1>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
