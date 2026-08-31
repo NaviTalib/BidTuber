@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://bidtuber.com/sitemap.xml
