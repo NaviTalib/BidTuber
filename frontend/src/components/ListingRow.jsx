@@ -26,19 +26,21 @@ export default function ListingRow({ channel, onClaimClick }) {
 
   return (
     <div
-      className={`group flex items-center gap-3.5 sm:gap-4 p-3.5 sm:p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
+      className={`group flex items-center gap-2.5 sm:gap-4 p-3 sm:p-4 rounded-2xl border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
         isTop1
           ? "bg-priceSoft/60 border-price/30 shadow-sm"
           : "bg-surface border-edge hover:border-brand/40"
       }`}
     >
+      {/* Rank Badge */}
       <span
-        className={`font-mono font-bold text-sm sm:text-base w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${getRankBadgeStyle()}`}
+        className={`font-mono font-bold text-xs sm:text-base w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${getRankBadgeStyle()}`}
       >
         #{channel.rank}
       </span>
 
-      <div className="w-11 h-11 rounded-xl bg-canvas border border-edge overflow-hidden shrink-0 shadow-inner">
+      {/* Channel Thumbnail */}
+      <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-canvas border border-edge overflow-hidden shrink-0 shadow-inner">
         {showImage ? (
           <img
             src={channel.thumbnail_url}
@@ -47,30 +49,31 @@ export default function ListingRow({ channel, onClaimClick }) {
             onError={() => setImgFailed(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-mute text-xs font-mono font-bold bg-surface">
+          <div className="w-full h-full flex items-center justify-center text-mute text-[10px] sm:text-xs font-mono font-bold bg-surface">
             {channel.name?.slice(0, 2).toUpperCase()}
           </div>
         )}
       </div>
 
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex items-center gap-2">
+      {/* Channel Details */}
+      <div className="min-w-0 flex-1 space-y-0.5 sm:space-y-1">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           <a
             href={channel.url}
             target="_blank"
             rel="noopener noreferrer"
             onClick={handleClick}
-            className="font-semibold text-sm sm:text-base text-ink hover:text-brand transition-colors truncate block"
+            className="font-semibold text-xs sm:text-base text-ink hover:text-brand transition-colors truncate block"
           >
             {channel.name}
           </a>
           
-          <span className="shrink-0 inline-flex items-center gap-1 font-mono text-[10px] font-medium bg-canvas border border-edge/80 text-mute px-2 py-0.5 rounded-full">
-            <span className="text-[9px]">👆</span> {clicks.toLocaleString()}
+          <span className="shrink-0 inline-flex items-center gap-0.5 sm:gap-1 font-mono text-[9px] sm:text-[10px] font-medium bg-canvas border border-edge/80 text-mute px-1.5 sm:px-2 py-0.5 rounded-full">
+            <span className="text-[8px] sm:text-[9px]">👆</span> {clicks.toLocaleString()}
           </span>
         </div>
 
-        <p className="text-xs text-mute truncate leading-none">
+        <p className="text-[11px] sm:text-xs text-mute truncate leading-tight">
           {channel.subscribers ? (
             <span className="font-medium text-ink/80">{channel.subscribers} subs</span>
           ) : null}
@@ -80,14 +83,15 @@ export default function ListingRow({ channel, onClaimClick }) {
         </p>
       </div>
 
-      <div className="flex flex-col items-end gap-1.5 shrink-0 pl-2">
-        <span className="font-mono text-price font-bold text-sm sm:text-base">
+      {/* Pricing & Outbid Action */}
+      <div className="flex flex-col items-end gap-1 sm:gap-1.5 shrink-0 pl-1 sm:pl-2">
+        <span className="font-mono text-price font-bold text-xs sm:text-base">
           ₹{rupees(channel.price_paise)}
         </span>
         <button
           type="button"
           onClick={() => onClaimClick(channel.rank, channel.handle)}
-          className="text-xs font-medium px-3 py-1 rounded-lg border border-edge bg-canvas hover:bg-brand hover:text-white hover:border-brand text-mute active:scale-95 transition-all shadow-sm"
+          className="text-[10px] sm:text-xs font-medium px-2.5 sm:px-3 py-1 rounded-lg border border-edge bg-canvas hover:bg-brand hover:text-white hover:border-brand text-mute active:scale-95 transition-all shadow-sm"
         >
           Outbid
         </button>

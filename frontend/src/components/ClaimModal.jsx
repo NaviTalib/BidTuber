@@ -208,20 +208,21 @@ export default function ClaimModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-ink/60 backdrop-blur-md transition-all">
-        <div className="w-full sm:max-w-lg bg-surface border border-edge rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="w-full sm:max-w-lg bg-surface border border-edge rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 shadow-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+          
           {/* Header */}
-          <div className="flex items-center justify-between pb-4 border-b border-edge">
+          <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-edge sticky top-0 bg-surface z-10 pt-1 -mt-1">
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-sm bg-brand/10 text-brand px-2.5 py-1 rounded-full border border-brand/20 transition-all">
+              <span className="font-mono font-bold text-xs sm:text-sm bg-brand/10 text-brand px-2.5 py-1 rounded-full border border-brand/20 transition-all shrink-0">
                 Rank #{calculatedRank}
               </span>
-              <h2 className="font-display font-bold text-xl text-ink">
+              <h2 className="font-display font-bold text-lg sm:text-xl text-ink truncate">
                 Claim Placement
               </h2>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-canvas hover:bg-edge/50 flex items-center justify-center text-mute hover:text-ink text-lg transition-colors"
+              className="w-8 h-8 rounded-full bg-canvas hover:bg-edge/50 flex items-center justify-center text-mute hover:text-ink text-base transition-colors shrink-0"
             >
               ✕
             </button>
@@ -229,51 +230,51 @@ export default function ClaimModal({
 
           {/* Bid Amount Selector */}
           {quote && (
-            <div className="mt-4 p-3.5 bg-priceSoft/50 border border-price/20 rounded-xl flex items-center justify-between gap-3">
-              <div>
+            <div className="mt-4 p-3 sm:p-3.5 bg-priceSoft/50 border border-price/20 rounded-xl flex items-center justify-between gap-2 sm:gap-3">
+              <div className="min-w-0">
                 <span className="text-xs text-mute font-medium block">Bid Amount (₹)</span>
-                <span className="text-[11px] text-mute">Min required: ₹{minRupees}</span>
+                <span className="text-[10px] sm:text-[11px] text-mute block truncate">Min required: ₹{minRupees}</span>
               </div>
 
-              <div className="flex items-center bg-canvas border border-edge focus-within:border-price rounded-xl px-3 py-1">
-                <span className="font-mono font-bold text-price text-lg mr-1">₹</span>
+              <div className="flex items-center bg-canvas border border-edge focus-within:border-price rounded-xl px-2.5 sm:px-3 py-1 shrink-0">
+                <span className="font-mono font-bold text-price text-base sm:text-lg mr-1">₹</span>
                 <input
                   type="number"
                   min={minRupees}
                   step="1"
                   value={customAmountRupees}
                   onChange={handleAmountChange}
-                  className="w-24 bg-transparent font-mono font-extrabold text-price text-lg outline-none text-right"
+                  className="w-20 sm:w-24 bg-transparent font-mono font-extrabold text-price text-base sm:text-lg outline-none text-right"
                 />
               </div>
             </div>
           )}
 
           {/* YouTube Auto-fill */}
-          <div className="mt-5 space-y-2">
+          <div className="mt-4 sm:mt-5 space-y-2">
             <label className="text-[11px] uppercase tracking-wider font-mono font-semibold text-mute block">
               Auto-fill from YouTube
             </label>
             <div className="flex gap-2">
-              <div className="relative flex-1">
+              <div className="relative flex-1 min-w-0">
                 <input
                   placeholder="@handle or channel URL"
                   value={handle}
                   onChange={(e) => setHandle(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), fetchFromHandle())}
-                  className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink placeholder:text-mute/60 transition"
+                  className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-ink placeholder:text-mute/60 transition"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => fetchFromHandle()}
                 disabled={lookupStatus === "loading" || !handle.trim()}
-                className="px-4 py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-brand hover:bg-brand hover:text-white text-sm font-semibold transition-all disabled:opacity-50 shrink-0 flex items-center gap-2"
+                className="px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-brand/10 border border-brand/20 text-brand hover:bg-brand hover:text-white text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 shrink-0 flex items-center gap-1.5"
               >
                 {lookupStatus === "loading" ? (
                   <>
                     <span className="w-3.5 h-3.5 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-                    Fetching
+                    <span className="hidden sm:inline">Fetching</span>
                   </>
                 ) : (
                   "Fetch"
@@ -282,19 +283,19 @@ export default function ClaimModal({
             </div>
 
             {lookupStatus === "done" && (
-              <div className="mt-2 p-3 bg-canvas border border-edge rounded-xl flex items-center gap-3">
+              <div className="mt-2 p-2.5 sm:p-3 bg-canvas border border-edge rounded-xl flex items-center gap-2.5 sm:gap-3">
                 {form.thumbnailUrl ? (
-                  <img src={form.thumbnailUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-edge" />
+                  <img src={form.thumbnailUrl} alt="" className="w-8 sm:w-9 h-8 sm:h-9 rounded-full object-cover border border-edge shrink-0" />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-surface border border-edge flex items-center justify-center font-mono text-xs font-bold text-mute">
+                  <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-full bg-surface border border-edge flex items-center justify-center font-mono text-xs font-bold text-mute shrink-0">
                     {form.name?.slice(0, 2).toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-bold text-ink truncate">{form.name}</p>
-                  <p className="text-[11px] text-mute truncate">{form.subscribers ? `${form.subscribers} subscribers` : form.url}</p>
+                  <p className="text-[10px] sm:text-[11px] text-mute truncate">{form.subscribers ? `${form.subscribers} subscribers` : form.url}</p>
                 </div>
-                <span className="text-[10px] bg-online/10 text-online border border-online/20 px-2 py-0.5 rounded-full font-semibold">
+                <span className="text-[9px] sm:text-[10px] bg-online/10 text-online border border-online/20 px-2 py-0.5 rounded-full font-semibold shrink-0">
                   Verified
                 </span>
               </div>
@@ -306,7 +307,7 @@ export default function ClaimModal({
           </div>
 
           {/* Form */}
-          <form onSubmit={submit} className="mt-5 space-y-3.5">
+          <form onSubmit={submit} className="mt-4 sm:mt-5 space-y-3 sm:space-y-3.5">
             <div>
               <label className="text-xs font-medium text-mute mb-1 block">Channel Name *</label>
               <input
@@ -314,7 +315,7 @@ export default function ClaimModal({
                 placeholder="e.g. Marques Brownlee"
                 value={form.name}
                 onChange={update("name")}
-                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink transition"
+                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-ink transition"
               />
             </div>
 
@@ -326,17 +327,17 @@ export default function ClaimModal({
                 placeholder="https://youtube.com/@mkbhd"
                 value={form.url}
                 onChange={update("url")}
-                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink transition"
+                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-ink transition"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-xs font-medium text-mute mb-1 block">Category</label>
                 <select
                   value={form.category}
                   onChange={update("category")}
-                  className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3 py-2.5 text-sm text-ink transition"
+                  className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-ink transition"
                 >
                   {categories.map((c) => (
                     <option key={c} value={c}>
@@ -352,7 +353,7 @@ export default function ClaimModal({
                   placeholder="e.g. 18.5M"
                   value={form.subscribers}
                   onChange={update("subscribers")}
-                  className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink transition"
+                  className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-ink transition"
                 />
               </div>
             </div>
@@ -364,7 +365,7 @@ export default function ClaimModal({
                 placeholder="https://..."
                 value={form.thumbnailUrl}
                 onChange={update("thumbnailUrl")}
-                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink transition"
+                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-ink transition"
               />
             </div>
 
@@ -375,7 +376,7 @@ export default function ClaimModal({
                 value={form.description}
                 onChange={update("description")}
                 rows={2}
-                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3.5 py-2.5 text-sm text-ink resize-none transition"
+                className="w-full bg-canvas border border-edge focus:border-brand outline-none rounded-xl px-3 sm:px-3.5 py-2 sm:py-2.5 text-xs sm:text-sm text-ink resize-none transition"
               />
             </div>
 
@@ -388,7 +389,7 @@ export default function ClaimModal({
             <button
               type="submit"
               disabled={status === "paying" || status === "quoting"}
-              className="w-full mt-2 py-3 rounded-xl bg-brand text-white font-semibold text-sm hover:bg-brand/90 active:scale-[0.99] transition-all disabled:opacity-50 shadow-lg shadow-brand/20 flex items-center justify-center gap-2"
+              className="w-full mt-2 py-2.5 sm:py-3 rounded-xl bg-brand text-white font-semibold text-xs sm:text-sm hover:bg-brand/90 active:scale-[0.99] transition-all disabled:opacity-50 shadow-lg shadow-brand/20 flex items-center justify-center gap-2"
             >
               {status === "paying" ? (
                 <>
@@ -400,7 +401,7 @@ export default function ClaimModal({
               )}
             </button>
 
-            <p className="text-[11px] text-mute text-center pt-1">
+            <p className="text-[10px] sm:text-[11px] text-mute text-center pt-1">
               By placing a bid, you agree to our{" "}
               <button
                 type="button"

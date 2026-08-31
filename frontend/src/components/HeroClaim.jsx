@@ -23,7 +23,6 @@ export default function HeroClaim({
 
   // Periodically update to keep the random live count active and dynamic
   useEffect(() => {
-    // If onlineNow is passed from WebSocket, fall back to random if onlineNow is <= 1
     if (onlineNow > 1) {
       setDisplayOnline(onlineNow);
       return;
@@ -31,12 +30,12 @@ export default function HeroClaim({
 
     const interval = setInterval(() => {
       setDisplayOnline(getRandomInt(1, 100));
-    }, 5000); // Changes every 5 seconds
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [onlineNow]);
 
-  // Clear handle input whenever payment succeeds (refreshKey increments)
+  // Clear handle input whenever payment succeeds
   useEffect(() => {
     setHandleInput("");
   }, [refreshKey]);
@@ -79,7 +78,7 @@ export default function HeroClaim({
   };
 
   return (
-    <section className="relative overflow-hidden pt-12 pb-16 px-4 text-center">
+    <section className="relative overflow-hidden pt-8 sm:pt-12 pb-12 sm:pb-16 px-4 text-center">
       <div className="max-w-4xl mx-auto flex flex-col items-center">
         
         {/* Visitors & Pill Badges */}
@@ -91,25 +90,25 @@ export default function HeroClaim({
             <span className="font-bold text-ink">{displayOnline}</span> Live Now
           </div>
 
-          <span className="text-edge font-mono text-xs">•</span>
+          <span className="text-edge font-mono text-xs hidden sm:inline">•</span>
 
           {/* YouTube Category Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand/10 border border-brand/20 text-[11px] font-mono font-semibold text-brand tracking-wider uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand/10 border border-brand/20 text-[10px] sm:text-[11px] font-mono font-semibold text-brand tracking-wider uppercase">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" />
             YOUTUBE CHANNEL PLACEMENT BOARD
           </div>
         </div>
 
         {/* Dynamic Animated Claim Rank Section */}
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-ink font-display flex flex-wrap items-center justify-center gap-3">
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-ink font-display flex flex-wrap items-center justify-center gap-2 sm:gap-3 leading-tight">
           <span>Claim</span>
 
           {/* Interactive Rank Selector Badge */}
-          <div className="inline-flex items-center bg-canvas border border-edge rounded-2xl p-1.5 shadow-inner">
+          <div className="inline-flex items-center bg-canvas border border-edge rounded-2xl p-1 sm:p-1.5 shadow-inner">
             <button
               type="button"
               onClick={handleRankDown}
-              className="w-8 h-8 rounded-xl bg-surface hover:bg-edge/40 text-mute hover:text-ink flex items-center justify-center text-xs font-bold transition-all active:scale-90"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-surface hover:bg-edge/40 text-mute hover:text-ink flex items-center justify-center text-xs font-bold transition-all active:scale-90"
               title="Lower Rank"
             >
               ▼
@@ -117,7 +116,7 @@ export default function HeroClaim({
 
             {/* Rank Number with Transition Animation */}
             <span
-              className={`font-mono font-extrabold text-brand px-3 min-w-[3.5rem] transition-all duration-200 ease-out transform ${
+              className={`font-mono font-extrabold text-brand px-2 sm:px-3 min-w-[3rem] sm:min-w-[3.5rem] transition-all duration-200 ease-out transform ${
                 isChangingRank
                   ? "scale-90 opacity-40 blur-[1px]"
                   : "scale-100 opacity-100 blur-0"
@@ -130,7 +129,7 @@ export default function HeroClaim({
               type="button"
               onClick={handleRankUp}
               disabled={selectedRank <= 1}
-              className="w-8 h-8 rounded-xl bg-surface hover:bg-edge/40 text-mute hover:text-ink flex items-center justify-center text-xs font-bold transition-all active:scale-90 disabled:opacity-30 disabled:hover:bg-surface"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-surface hover:bg-edge/40 text-mute hover:text-ink flex items-center justify-center text-xs font-bold transition-all active:scale-90 disabled:opacity-30 disabled:hover:bg-surface"
               title="Higher Rank"
             >
               ▲
@@ -152,24 +151,24 @@ export default function HeroClaim({
         </h1>
 
         {/* Quote Disclaimer */}
-        <p className="mt-4 text-xs sm:text-sm text-mute max-w-xl transition-opacity duration-200">
+        <p className="mt-3 sm:mt-4 text-xs sm:text-sm text-mute max-w-xl transition-opacity duration-200 px-2">
           Minimum required bid for <strong className="text-ink">#{selectedRank}</strong> is{" "}
           <strong className="text-price font-mono">₹{rupees(currentPricePaise)}</strong>. You can enter a higher custom amount inside the checkout modal to hold your spot longer.
         </p>
 
-        {/* Input Form */}
-        <form onSubmit={handleSubmit} className="mt-8 w-full max-w-lg">
-          <div className="p-1.5 bg-surface border border-edge rounded-2xl shadow-xl flex items-center gap-2 transition-within:border-brand">
+        {/* Input Form - Responsive flex-col to flex-row transition */}
+        <form onSubmit={handleSubmit} className="mt-6 sm:mt-8 w-full max-w-lg px-2 sm:px-0">
+          <div className="p-1.5 bg-surface border border-edge rounded-2xl shadow-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2 focus-within:border-brand transition-colors">
             <input
               type="text"
               placeholder="Enter YouTube URL or @handle"
               value={handleInput}
               onChange={(e) => setHandleInput(e.target.value)}
-              className="flex-1 bg-transparent px-4 py-2.5 text-sm text-ink outline-none placeholder:text-mute/60 font-medium"
+              className="w-full bg-transparent px-4 py-3 sm:py-2.5 text-sm text-ink outline-none placeholder:text-mute/60 font-medium text-center sm:text-left"
             />
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-brand text-white font-semibold text-sm hover:bg-brand/90 active:scale-95 transition-all shadow-md shadow-brand/20 shrink-0"
+              className="w-full sm:w-auto px-5 py-3 sm:py-2.5 rounded-xl bg-brand text-white font-semibold text-sm hover:bg-brand/90 active:scale-95 transition-all shadow-md shadow-brand/20 shrink-0"
             >
               Continue to payment →
             </button>
@@ -177,7 +176,7 @@ export default function HeroClaim({
         </form>
 
         {/* Total Placements Stats */}
-        <div className="mt-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface border border-edge text-xs font-mono text-mute shadow-sm">
+        <div className="mt-6 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface border border-edge text-xs font-mono text-mute shadow-sm max-w-full truncate">
           <span className="font-bold text-ink">₹{rupees(totalVerifiedPaise)}</span> verified in total placements
         </div>
 
