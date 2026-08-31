@@ -15,20 +15,52 @@ import youtubeRouter from "./routes/youtube.js";
 const app = express();
 const server = createServer(app);
 
-const clientOrigin = process.env.CLIENT_ORIGIN || "http://localhost:5173";
+// Environment variable with fallbacks
+const configuredOrigin = process.env.CLIENT_ORIGIN || process.env.CLIENT_URL || "http://localhost:5173";
 
+// Helper function to check if origin is allowed
+const isAllowedOrigin = (origin) => {
+  // Allow requests with no origin (like mobile apps, curl, server-to-server)
+  if (!origin) return true;
+  
+  // Allow configured origin or local development
+  if (origin === configuredOrigin || origin.startsWith("http://localhost:")) return true;
+  
+  // Allow any vercel.app deployment URL
+  if (origin.endsWith(".vercel.app")) return true;
+
+  return false;
+};
+
+// CORS middleware configuration
 app.use(
   cors({
-    origin: clientOrigin,
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`[CORS Blocked]: ${origin}`);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
   })
 );
+
 app.use(express.json());
 
-// Socket.io Setup
+// Socket.io Setup with flexible CORS origin matching
 const io = new Server(server, {
   cors: {
-    origin: clientOrigin,
+    origin: (origin, callback) => {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -59,9 +91,9 @@ const port = process.env.PORT || 4000;
 
 connectDB()
   .then(() => {
-    // Listen on the HTTP server wrapper instead of app.listen
-    server.listen(port, () => {
-      console.log(`BidTuber API & Sockets listening on http://localhost:${port}`);
+    // Listen on 0.0.0.0 to bind properly to cloud providers like Render
+    server.listen(port, "0.0.0.0", () => {
+      console.log(`BidTuber API & Sockets listening on port ${port}`);
     });
   })
   .catch((err) => {
